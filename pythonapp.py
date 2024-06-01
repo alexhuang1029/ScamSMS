@@ -7,19 +7,20 @@ app = Flask(__name__)
 
 
 # Enter OpenAI API Key
-openai.api_key = '****'
+openai.api_key = "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"
 
 
 # Create app function which activates when SMS is received
 @app.route("/sms", methods=['POST'])
 def reply():
     # Collect message from incoming SMS
+    
     incoming = request.form.get('Body')
 
     # Insert command from Tuesday SEFCOM meeting
     # Generates ChatGPT response
     # *may need to change code to reflect the previous messages (expand context window)*
-    response = openai.ChatCompletion.create(
+    response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages = [
             {"role": "system", "content": "You are ChatGPT, the most up-to-date and brilliant artificial intelligence system designed to combat against smishing (SMS) scammers. \
@@ -32,14 +33,17 @@ def reply():
     )
     
     # Collect ChatGPT API reply
-    reply = response.choices[0].message['content'].strip()
+    reply = response.choices[0].message.content.strip()
 
     # Send out Twilio response
     outgoing = MessagingResponse()
     outgoing.message(reply)
 
     return str(outgoing)
+    print(str(outgoing))
 
 # Run Flask app based on webhook
-if __name__ == "__main__"
+if __name__ == "__main__":
+    print("hello") 
     app.run(debug = True)
+    
