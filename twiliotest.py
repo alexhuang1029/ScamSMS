@@ -10,7 +10,7 @@ message = client.messages \
                 .create(
                     body="Hello. Testing 123 123 123!~@($)#$()",
                     from_='+18552168577',
-                    to='**********'
+                    to='+14807498123'
                 )
 print("HI")
 print(message.sid)
