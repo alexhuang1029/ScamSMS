@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 
 # Enter OpenAI API Key
-openai.api_key = ""
+openai.api_key = "sk-proj-Z6wBmhirL8XkArbSF6hIT3BlbkFJzoisYJVWci5tAlkeNLQ2"
 
 
 # Create app function which activates when SMS is received
