@@ -2,9 +2,12 @@ import os
 import openai
 from twilio.twiml.messaging_response import MessagingResponse
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
 
+# Allow all requests to be accepted by Flask
+CORS(app)
 
 # Enter OpenAI API Key
 openai.api_key = "sk-proj-Z6wBmhirL8XkArbSF6hIT3BlbkFJzoisYJVWci5tAlkeNLQ2"
@@ -45,5 +48,5 @@ def reply():
 # Run Flask app based on webhook
 if __name__ == "__main__":
     print("hello") 
-    app.run(debug = True)
+    app.run(debug = True, port=1111)
     
