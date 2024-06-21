@@ -1,7 +1,6 @@
 aiohttp==3.9.5
 aiohttp-retry==2.8.3
 aiosignal==1.3.1
-altgraph @ file:///AppleInternal/Library/BuildRoots/860631e9-c1c5-11ee-98ee-b6ef2fd8d87b/Library/Caches/com.apple.xbs/Sources/python3/altgraph-0.17.2-py2.py3-none-any.whl
 annotated-types==0.7.0
 anyio==4.4.0
 appnope==0.1.4
@@ -26,7 +25,6 @@ Flask-Cors==4.0.1
 Flask-Session==0.8.0
 fonttools==4.53.0
 frozenlist==1.4.1
-future @ file:///AppleInternal/Library/BuildRoots/860631e9-c1c5-11ee-98ee-b6ef2fd8d87b/Library/Caches/com.apple.xbs/Sources/python3/future-0.18.2-py3-none-any.whl
 h11==0.14.0
 httpcore==1.0.5
 httpx==0.27.0
@@ -41,7 +39,6 @@ Jinja2==3.1.4
 jupyter_client==8.6.2
 jupyter_core==5.7.2
 kiwisolver==1.4.5
-macholib @ file:///AppleInternal/Library/BuildRoots/860631e9-c1c5-11ee-98ee-b6ef2fd8d87b/Library/Caches/com.apple.xbs/Sources/python3/macholib-1.15.2-py2.py3-none-any.whl
 MarkupSafe==2.1.5
 matplotlib==3.9.0
 matplotlib-inline==0.1.7
