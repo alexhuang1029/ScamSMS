@@ -3,6 +3,7 @@ import openai
 from twilio.twiml.messaging_response import MessagingResponse
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
@@ -10,7 +11,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = '12345678'
 
 # Enter OpenAI API Key
-openai.api_key = "sk-proj-Z6wBmhirL8XkArbSF6hIT3BlbkFJzoisYJVWci5tAlkeNLQ2"
+openai.api_key = os.getenv("OPENAI_KEY")
 
 # Set threshold for messages in a session
 max_messages = 40
