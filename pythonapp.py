@@ -11,7 +11,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = '12345678'
 
 # Enter OpenAI API Key
-openai.api_key = os.getenv("OPENAI_KEY")
+openai.api_key = ""
 
 # Set threshold for messages in a session
 max_messages = 40
@@ -58,7 +58,7 @@ def reply():
     session['chat_log'] = chat_log
 
     # Sleep a set amount of time works
-    time.sleep(15)
+    # time.sleep(15)
 
     # Sleep a certain time based on word count of reply text *DOEST WORK*
     # time.sleep(len(reply.split()))
@@ -74,5 +74,5 @@ def reply():
 # Run Flask app based on webhook
 if __name__ == "__main__":
     print("hello")
-    app.run(debug = True, port=1111)
+    app.run(debug = True, port=1111, host='0.0.0.0')
     
