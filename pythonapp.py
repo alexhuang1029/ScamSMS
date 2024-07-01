@@ -4,25 +4,23 @@ from twilio.twiml.messaging_response import MessagingResponse
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from dotenv import load_dotenv
-from string import ascii_letters, punctuation, whitespace
 from pymongo import MongoClient
 
 app = Flask(__name__)
 
-# Set Secret Key for flask session
+# Load .env
 load_dotenv()
-app.config['SECRET_KEY'] = '12345678'
 
 # Enter OpenAI API Key
 openai.api_key = os.getenv("OPENAI_KEY")
 
-# Set threshold for messages in a session
-max_messages = 40
+# Create current log, known numbers, previous number
+current_log = []
+known_numbers = []
+previous_number = None
 
-# Create ignore template to remove + from phone numers
-ignore = ascii_letters + punctuation + whitespace
-
-# Create MongoClient instance and dictionary of chatlogs
+# Create and connect to MongoClient instance
+# Create directory (`chatlogs`) where messages are stored
 client = MongoClient(os.getenv("MONGODB_STRING"))
 db = client.chatlogs
 message_database = db.messages
@@ -37,52 +35,79 @@ template = [
 ]
 
 # Create function for asking chatpgt
-def gpt(question, chat_log = None):
-
-    # Creates chat log array
-    if chat_log is None:
-        chat_log = template
-    chat_log = chat_log + [{'role': 'user', 'content': question}]
-    
-    # Generates ChatGPT response
+def gpt(chat_log):
+    # Initiate GPT API response
     response = openai.chat.completions.create(
-        model="gpt-3.5-turbo",
+        # Now utilizing the most advanced model, GPT-4o (increased cost)
+        model="gpt-4o",
         messages = chat_log
     )
-    # Collect ChatGPT API reply
+    # Collect GPT API reply
     reply = response.choices[0].message.content.strip()
-    chat_log = chat_log + [{'role': 'assistant', 'content': reply}]
-    return reply, chat_log
+    return reply
 
+# Create parser function to remove unnecessary dictionary keys when calling a database user
+def parser(current_log):
+    for i in current_log:
+        i.pop('_id', None)
+        i.pop('user', None)
+        i.pop('timestamp_i', None)
+        i.pop('timestamp_o')
+    return current_log
+    
 # Allow all requests to be accepted by Flask
 CORS(app)
 
 # Create app function which activates when SMS is received
 @app.route("/sms", methods=['POST'])
 def reply():
+    # Globalize important variables
+    global previous_number, current_log, known_numbers
     # Collect message and chat log from incoming SMS 
     incoming = request.form.get('Body')
     # Access sender's phone number
     phone_number = request.form.get('From')
-    # phone_number = str(incoming_id).translate(None, ignore)
-    # Access timestamp
-    # incoming_timestamp = datetime.utcnow()
+    # Access timestamp. *UTC is not 0 but -8.
+    incoming_timestamp = datetime.datetime.today()
+
+    # Inserts the message into the overall MongoDB database
     message_database.insert_one({
         "user": phone_number,
         "role": 'user',
         "content": incoming,
+        "timestamp_i": incoming_timestamp
     })
-    chat_log = session.get('chat_log')
-    reply, chat_log = gpt(incoming, chat_log)
-    # outgoing_timestamp = datetime.utcnow()
+
+    # Perform check to see if previous number is this number:
+    if phone_number == previous_number:
+        database = list(message_database.find({"user": phone_number}))
+        parsed_log = parser(database) 
+        current_log = template + parsed_log 
+
+    # Pulls known number's chat log from MongoDB
+    elif phone_number in known_numbers:
+        database = list(message_database.find({"user": phone_number}))
+        parsed_log = parser(database) 
+        current_log = template + parsed_log 
+        previous_number = phone_number
+
+    # Creates new known user and a new chat log
+    else:
+        current_log = template + [{'role': 'user', 'content': incoming}]
+        previous_number = phone_number
+        known_numbers.append(phone_number)
+
+    # Calls `gpt` function to generate reply, given the array `current_log`
+    reply = gpt(current_log)
+    outgoing_timestamp = datetime.datetime.today()
+
+    # Adds GPT API reply to the message database
     message_database.insert_one({
         "user": phone_number,
         "role": 'assistant',
-        "content": reply
+        "content": reply,
+        "timestamp_o": outgoing_timestamp
     })
-   
-    # Update chat log 
-    session['chat_log'] = chat_log
 
     # Sleep a set amount of time works
     # Sleep a certain time based on word count of reply text *DOEST WORK*
@@ -92,7 +117,6 @@ def reply():
     # Send out Twilio response
     outgoing = MessagingResponse()
     outgoing.message(reply)
-
     return str(outgoing)
 
 # Run Flask app based on webhook
