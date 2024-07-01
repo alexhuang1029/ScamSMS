@@ -52,7 +52,7 @@ def parser(current_log):
         i.pop('_id', None)
         i.pop('user', None)
         i.pop('timestamp_i', None)
-        i.pop('timestamp_o')
+        i.pop('timestamp_o', None)
     return current_log
     
 # Allow all requests to be accepted by Flask
@@ -106,7 +106,7 @@ def reply():
         "user": phone_number,
         "role": 'assistant',
         "content": reply,
-        "timestamp_o": outgoing_timestamp
+	"timestamp_o": outgoing_timestamp
     })
 
     # Sleep a set amount of time works
