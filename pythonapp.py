@@ -69,6 +69,7 @@ class Countdown(threading.Thread):
         self.duration = duration
         self.stop_event = threading.Event()
 
+    # Countdown check for 30 minutes
     def run(self):
         print(f'Starting countdown for {self.number}')
         while self.duration > 0 and not self.stop_event.is_set():
@@ -80,15 +81,17 @@ class Countdown(threading.Thread):
     def stop(self):
         self.stop_event.set()
     
+    # Cleanup function that merges all chats in the past X minutes of inactivity
     def cleanup(self, number):
         unmerged_chats = list(message_database.find({
             "user": number,
             "merged": {"$ne": True} # Finds unmerged documents
         }))
 
-
+        # Appending chats
         combined_chats = "\n".join(doc["content"]for doc in unmerged_chats)
 
+        # Creating new metadata
         merged_document = {
             "user": number,
             "content": combined_chats,
@@ -98,6 +101,7 @@ class Countdown(threading.Thread):
 
         message_database.insert_one(merged_document)
         
+        # Deleting all unmerged chats
         for doc in unmerged_chats:
             message_database.delete_one({"_id": doc["_id"]})
 
