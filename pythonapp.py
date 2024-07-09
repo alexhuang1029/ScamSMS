@@ -1,4 +1,4 @@
-import os, time, datetime, threading
+import os, time, datetime, threading, json
 import openai
 from twilio.twiml.messaging_response import MessagingResponse
 from flask import Flask, request, jsonify, session
@@ -54,8 +54,6 @@ def parser(current_log):
     for i in current_log:
         i.pop('_id', None)
         i.pop('user', None)
-        i.pop('timestamp_i', None)
-        i.pop('timestamp_o', None)
     return current_log
     
 # Allow all requests to be accepted by Flask
@@ -97,7 +95,6 @@ class Countdown(threading.Thread):
         merged_document = {
             "user": number,
             "content": combined_chats,
-            "last_timestamp": (datetime.datetime.now() - datetime.timedelta(minutes=30)),
             "merged": True
         }
 
@@ -120,14 +117,13 @@ def reply():
     # Access sender's phone number
     phone_number = request.form.get('From')
     # Access timestamp. *UTC is not 0 but -8.
-    incoming_timestamp = datetime.datetime.today()
+    incoming_timestamp = str(datetime.datetime.today())
 
     # Inserts the message into the overall MongoDB database
     message_database.insert_one({
         "user": phone_number,
         "role": 'user',
-        "content": incoming,
-        "timestamp_i": incoming_timestamp
+        "content": incoming
     })
     
     if phone_number in countdowns:
@@ -158,14 +154,14 @@ def reply():
 
     # Calls `gpt` function to generate reply, given the array `current_log`
     reply = gpt(current_log)
-    outgoing_timestamp = datetime.datetime.today()
+    print(reply)
+    outgoing_timestamp = str(datetime.datetime.today())
 
     # Adds GPT API reply to the message database
     message_database.insert_one({
         "user": phone_number,
         "role": 'assistant',
-        "content": reply,
-	"timestamp_o": outgoing_timestamp
+        "content": reply
     })
 
     # Sleep a set amount of time works
