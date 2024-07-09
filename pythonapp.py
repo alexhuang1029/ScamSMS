@@ -19,7 +19,7 @@ openai.api_key = os.getenv("OPENAI_KEY")
 current_log = []
 known_numbers = []
 previous_number = None
-countdown_duration = 30 * 60
+countdown_duration = 20
 countdowns = {}
 
 # Create and connect to MongoClient instance
