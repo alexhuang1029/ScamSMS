@@ -1,10 +1,11 @@
-import os, time, datetime
+import os, time, datetime, threading
 import openai
 from twilio.twiml.messaging_response import MessagingResponse
 from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 from dotenv import load_dotenv
 from pymongo import MongoClient
+
 
 app = Flask(__name__)
 
@@ -18,6 +19,8 @@ openai.api_key = os.getenv("OPENAI_KEY")
 current_log = []
 known_numbers = []
 previous_number = None
+countdown_duration = 30 * 60
+countdowns = {}
 
 # Create and connect to MongoClient instance
 # Create directory (`chatlogs`) where messages are stored
@@ -58,11 +61,60 @@ def parser(current_log):
 # Allow all requests to be accepted by Flask
 CORS(app)
 
+# Creates countdown function which triggers when receiving a text from a number:
+class Countdown(threading.Thread):
+    def __init__(self, number, duration):
+        super().__init__()
+        self.number = number
+        self.duration = duration
+        self.stop_event = threading.Event()
+
+    # Countdown check for 30 minutes
+    def run(self):
+        print(f'Starting countdown for {self.number}')
+        while self.duration > 0 and not self.stop_event.is_set():
+            time.sleep(1)
+            self.duration -= 1
+        if not self.stop_event.is_set():
+            self.cleanup(self.number)
+
+    def stop(self):
+        self.stop_event.set()
+    
+    # Cleanup function that merges all chats in the past X minutes of inactivity
+    def cleanup(self, number):
+        unmerged_chats = list(message_database.find({
+            "user": number,
+            "merged": {"$ne": True} # Finds unmerged documents
+        }))
+
+        # Appending chats
+        combined_chats = "\n".join(doc["content"]for doc in unmerged_chats)
+
+        # Creating new metadata
+        merged_document = {
+            "user": number,
+            "content": combined_chats,
+            "last_timestamp": (datetime.datetime.now() - datetime.timedelta(minutes=30)),
+            "merged": True
+        }
+
+        message_database.insert_one(merged_document)
+        
+        # Deleting all unmerged chats
+        for doc in unmerged_chats:
+            message_database.delete_one({"_id": doc["_id"]})
+
+        print(f'Cleanup and merge completed for user {number}')
+            
+
+
+
 # Create app function which activates when SMS is received
 @app.route("/sms", methods=['POST'])
 def reply():
     # Globalize important variables
-    global previous_number, current_log, known_numbers
+    global previous_number, current_log, known_numbers, countdown_duration, countdowns
     # Collect message and chat log from incoming SMS 
     incoming = request.form.get('Body')
     # Access sender's phone number
@@ -77,6 +129,13 @@ def reply():
         "content": incoming,
         "timestamp_i": incoming_timestamp
     })
+    
+    if phone_number in countdowns:
+        countdowns[phone_number].stop()
+    
+    countdown_thread = Countdown(phone_number, countdown_duration)
+    countdown_thread.start()
+    countdowns[phone_number] = countdown_thread
 
     # Perform check to see if previous number is this number:
     if phone_number == previous_number:
