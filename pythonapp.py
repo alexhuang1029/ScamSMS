@@ -139,7 +139,9 @@ def reply():
     if phone_number == previous_number:
         database = list(message_database.find({"user": phone_number}))
         print(database)
-        parsed_log = parser(database) 
+        combined_database = "\n".join(doc["content"] for doc in database)
+        print(combined_database)
+        parsed_log = parser(combined_database) 
         current_log = template + parsed_log 
         print(current_log)
         print(1)
