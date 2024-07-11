@@ -82,6 +82,7 @@ class Countdown(threading.Thread):
 
     def stop(self):
         self.stop_event.set()
+        print(f'stopping {self.number}')
     
     # Cleanup function that merges all chats in the past X minutes of inactivity
     def cleanup(self, number):
@@ -106,6 +107,7 @@ class Countdown(threading.Thread):
         for doc in unmerged_chats:
             message_database.delete_one({"_id": doc["_id"]})
 
+        del countdowns[number]
         print(f'Cleanup and merge completed for user {number}')
             
 
@@ -132,6 +134,8 @@ def reply():
     
     if phone_number in countdowns:
         countdowns[phone_number].stop()
+    else:
+        countdowns.append(phone_number)
     
     countdown_thread = Countdown(phone_number, countdown_duration)
     countdown_thread.start()
