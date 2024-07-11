@@ -6,7 +6,6 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
-
 app = Flask(__name__)
 
 # Load .env
@@ -19,7 +18,7 @@ openai.api_key = os.getenv("OPENAI_KEY")
 current_log = []
 known_numbers = []
 previous_number = None
-countdown_duration = 20
+countdown_duration = 30 * 60
 countdowns = {}
 
 # Create and connect to MongoClient instance
@@ -29,11 +28,11 @@ db = client.chatlogs
 message_database = db.messages
 
 # Create chat log template
-template = {"role": "system", "content": "You are an anti-smishing expert, and your job is to pretend as a victim of smishing. \
-             You are designed to replicate a human who may be susceptible to these scams. \
-             However, you are designed to waste scammers' time while collecting personally identifiable information on them, all the while sounding like you're a human. \
-             You have to pretend to sound and text like a human in 2024. Don't be too 'intelligent' right away, as this will scare the scammer off. \
-             Be subtle throughout. Remember, you are helping our future and creating a safer future by doing this task."}
+template_message = f'''You are an anti-smishing expert, and your job is to pretend as a victim of smishing.
+             You are designed to replicate a human who may be susceptible to these scams.
+             However, you are designed to waste scammers' time while collecting personally identifiable information on them, all the while sounding like you're a human.
+             You have to pretend to sound and text like a human in 2024. Don't be too 'intelligent' right away, as this will scare the scammer off.
+             Be subtle throughout. Remember, you are helping our future and creating a safer future by doing this task.'''
 
 # Create function for asking chatpgt
 def gpt(chat_log):
@@ -46,17 +45,6 @@ def gpt(chat_log):
     # Collect GPT API reply
     reply = response.choices[0].message.content.strip()
     return reply
-
-# Create parser function to remove unnecessary dictionary keys when calling a database user
-def parser(current_log):
-    for i in current_log:
-        i.pop('_id', None)
-        i.pop('user', None)
-        i.pop('timestamp_i', None)
-        i.pop('timestamp_o', None)
-        i.pop('last_timestamp', None)
-        i.pop('merged', None)
-    return current_log
     
 # Allow all requests to be accepted by Flask
 CORS(app)
@@ -88,9 +76,6 @@ class Countdown(threading.Thread):
             "user": number,
             "merged": {"$ne": True} # Finds unmerged documents
         }))
-
-
-
         # Appending chats
         combined_chats = "\n".join(doc["content"]for doc in unmerged_chats)
 
@@ -98,21 +83,35 @@ class Countdown(threading.Thread):
         merged_document = {
             "user": number,
             "content": combined_chats,
-            "merged": True
+            "merged": True,
+            "last_timestamp": (datetime.datetime.now() - datetime.timedelta(minutes=30)),
         }
-
         message_database.insert_one(merged_document)
         
         # Deleting all unmerged chats
         for doc in unmerged_chats:
             message_database.delete_one({"_id": doc["_id"]})
-
         countdowns.pop(number, None)
 
         print(f'Cleanup and merge completed for user {number}')
             
+# Process Message function to call previous messages from MongoDB Database
+def ProcessMessage(phone_number, incoming):
+    global template_message
+    database = list(message_database.find({"user": phone_number}))
 
+    # Creating API request log
+    processed_message = [
+        {"role": "system",
+         "content": template_message}, # Add template message
+        {"role": "user", 
+        "content": "\n".join(doc["content"] for doc in database)}
+    ]
 
+    # Sleep for specified time
+    time.sleep(20)
+
+    return(processed_message)
 
 # Create app function which activates when SMS is received
 @app.route("/sms", methods=['POST'])
@@ -123,60 +122,29 @@ def reply():
     incoming = request.form.get('Body')
     # Access sender's phone number
     phone_number = request.form.get('From')
-    # Access timestamp. *UTC is not 0 but -8.
-    incoming_timestamp = str(datetime.datetime.today())
-
     # Inserts the message into the overall MongoDB database
     message_database.insert_one({
         "user": phone_number,
         "role": 'user',
         "content": 'User: ' + incoming
     })
-        
-    # Perform check to see if previous number is this number:
-    if phone_number == previous_number:
-        database = list(message_database.find({"user": phone_number}))
-        print(database)
-        current_log = {
-            {template},
-            {"role": "user", 
-            "content": "\n".join(doc["content"] for doc in database)}
-        }
-        print(current_log)
-        # parsed_log = parser(combined_database) 
-        print(current_log)
-        print(1)
 
-    # Pulls known number's chat log from MongoDB
-    elif phone_number in known_numbers:
-        database = list(message_database.find({"user": phone_number}))
-        parsed_log = parser(database) 
-        current_log = template + parsed_log 
-        previous_number = phone_number
-        print(2)
+    current_log = ProcessMessage(phone_number, incoming)
 
-    # Creates new known user and a new chat log
-    else:
-        current_log = template + {'role': 'user', 'content': incoming}
-        previous_number = phone_number
-        known_numbers.append(phone_number)
-        print(3)
-
-
+    # Performs check to see if this number is currently in countdown
+    # If so, stop the countdown and restart it
     if phone_number in countdowns:
         countdowns[phone_number].stop()
         print("stopped")
 
+    # Start a new countdown for the incoming number w/ the specified duration
     countdown_thread = Countdown(phone_number, countdown_duration)
     countdown_thread.start()
     countdowns[phone_number] = countdown_thread
 
-    
-
     # Calls `gpt` function to generate reply, given the array `current_log`
     reply = gpt(current_log)
     print(reply)
-    outgoing_timestamp = str(datetime.datetime.today())
 
     # Adds GPT API reply to the message database
     message_database.insert_one({
@@ -184,11 +152,6 @@ def reply():
         "role": 'assistant',
         "content": 'Assistant: '+ reply
     })
-
-    # Sleep a set amount of time works
-    # Sleep a certain time based on word count of reply text *DOEST WORK*
-    # time.sleep(len(reply.split()))
-    # print(len(reply.split()))
 
     # Send out Twilio response
     outgoing = MessagingResponse()
