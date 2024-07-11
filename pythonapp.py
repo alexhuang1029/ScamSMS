@@ -157,7 +157,7 @@ def reply():
 
     # Creates new known user and a new chat log
     else:
-        current_log = template + [{'role': 'user', 'content': incoming}]
+        current_log = template + {'role': 'user', 'content': incoming}
         previous_number = phone_number
         known_numbers.append(phone_number)
         print(3)
