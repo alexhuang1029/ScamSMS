@@ -132,14 +132,17 @@ def reply():
     message_database.insert_one({
         "user": phone_number,
         "role": 'user',
-        "content": 'User' + incoming
+        "content": 'User: ' + incoming
     })
         
     # Perform check to see if previous number is this number:
     if phone_number == previous_number:
         database = list(message_database.find({"user": phone_number}))
         print(database)
-        combined_database = "\n".join(doc["content"] for doc in database)
+        combined_database = {
+            "role": "user", 
+            "content": "\n".join(doc["content"] for doc in database)
+        }
         print(combined_database)
         parsed_log = parser(combined_database) 
         current_log = template + parsed_log 
@@ -181,7 +184,7 @@ def reply():
     message_database.insert_one({
         "user": phone_number,
         "role": 'assistant',
-        "content": 'Assistant:'+ reply
+        "content": 'Assistant: '+ reply
     })
 
     # Sleep a set amount of time works
