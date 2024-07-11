@@ -142,6 +142,7 @@ def reply():
         database = list(message_database.find({"user": phone_number}))
         parsed_log = parser(database) 
         current_log = template + parsed_log 
+        print(current_log)
 
     # Pulls known number's chat log from MongoDB
     elif phone_number in known_numbers:
