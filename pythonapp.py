@@ -20,6 +20,7 @@ known_numbers = []
 previous_number = None
 countdown_duration = 30 * 60
 countdowns = {}
+response_time = 20
 
 # Create and connect to MongoClient instance
 # Create directory (`chatlogs`) where messages are stored
@@ -97,7 +98,7 @@ class Countdown(threading.Thread):
             
 # Process Message function to call previous messages from MongoDB Database
 def ProcessMessage(phone_number, incoming):
-    global template_message
+    global template_message, response_time
     database = list(message_database.find({"user": phone_number}))
 
     # Creating API request log
@@ -109,7 +110,7 @@ def ProcessMessage(phone_number, incoming):
     ]
 
     # Sleep for specified time
-    time.sleep(20)
+    time.sleep(response_time)
 
     return(processed_message)
 
