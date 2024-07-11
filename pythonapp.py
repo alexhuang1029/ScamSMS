@@ -1,4 +1,4 @@
-import os, time, datetime, threading
+import os, time, datetime, threading, json
 import openai
 from twilio.twiml.messaging_response import MessagingResponse
 from flask import Flask, request, jsonify, session
@@ -76,10 +76,8 @@ class Countdown(threading.Thread):
         while self.duration > 0 and not self.stop_event.is_set():
             time.sleep(1)
             self.duration -= 1
-            print(f'{self.duration} left for {self.number}')
         if not self.stop_event.is_set():
             self.cleanup(self.number)
-            print(f'Cleanup and merge completed for user {self.number}')
 
     def stop(self):
         self.stop_event.set()
@@ -98,7 +96,6 @@ class Countdown(threading.Thread):
         merged_document = {
             "user": number,
             "content": combined_chats,
-            "last_timestamp": (datetime.datetime.now() - datetime.timedelta(minutes=30)),
             "merged": True
         }
 
@@ -107,6 +104,8 @@ class Countdown(threading.Thread):
         # Deleting all unmerged chats
         for doc in unmerged_chats:
             message_database.delete_one({"_id": doc["_id"]})
+
+        print(f'Cleanup and merge completed for user {number}')
             
 
 
@@ -121,14 +120,13 @@ def reply():
     # Access sender's phone number
     phone_number = request.form.get('From')
     # Access timestamp. *UTC is not 0 but -8.
-    incoming_timestamp = datetime.datetime.today()
+    incoming_timestamp = str(datetime.datetime.today())
 
     # Inserts the message into the overall MongoDB database
     message_database.insert_one({
         "user": phone_number,
         "role": 'user',
-        "content": incoming,
-        "timestamp_i": incoming_timestamp
+        "content": incoming
     })
     
     if phone_number in countdowns:
@@ -159,14 +157,14 @@ def reply():
 
     # Calls `gpt` function to generate reply, given the array `current_log`
     reply = gpt(current_log)
-    outgoing_timestamp = datetime.datetime.today()
+    print(reply)
+    outgoing_timestamp = str(datetime.datetime.today())
 
     # Adds GPT API reply to the message database
     message_database.insert_one({
         "user": phone_number,
         "role": 'assistant',
-        "content": reply,
-        "timestamp_o": outgoing_timestamp
+        "content": reply
     })
 
     # Sleep a set amount of time works
@@ -182,5 +180,5 @@ def reply():
 # Run Flask app based on webhook
 if __name__ == "__main__":
     print("hello")
-    app.run(debug = True, port=1111)
+    app.run(debug = True, port=1111, host='0.0.0.0')
     
