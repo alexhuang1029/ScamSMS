@@ -57,6 +57,7 @@ def parser(current_log):
         i.pop('timestamp_i', None)
         i.pop('timestamp_o', None)
         i.pop('last_timestamp', None)
+        i.pop('merged', None)
     return current_log
     
 # Allow all requests to be accepted by Flask
