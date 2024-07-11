@@ -91,6 +91,8 @@ class Countdown(threading.Thread):
             "merged": {"$ne": True} # Finds unmerged documents
         }))
 
+
+
         # Appending chats
         combined_chats = "\n".join(doc["content"]for doc in unmerged_chats)
 
@@ -130,12 +132,13 @@ def reply():
     message_database.insert_one({
         "user": phone_number,
         "role": 'user',
-        "content": incoming
+        "content": 'User' + incoming
     })
         
     # Perform check to see if previous number is this number:
     if phone_number == previous_number:
         database = list(message_database.find({"user": phone_number}))
+        print(database)
         parsed_log = parser(database) 
         current_log = template + parsed_log 
         print(current_log)
@@ -176,7 +179,7 @@ def reply():
     message_database.insert_one({
         "user": phone_number,
         "role": 'assistant',
-        "content": reply
+        "content": 'Assistant:'+ reply
     })
 
     # Sleep a set amount of time works
