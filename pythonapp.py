@@ -20,7 +20,7 @@ current_log = []
 known_numbers = []
 previous_number = None
 countdown_duration = 20
-countdowns = {}
+countdowns = []
 
 # Create and connect to MongoClient instance
 # Create directory (`chatlogs`) where messages are stored
