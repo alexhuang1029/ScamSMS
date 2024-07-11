@@ -19,7 +19,7 @@ openai.api_key = os.getenv("OPENAI_KEY")
 current_log = []
 known_numbers = []
 previous_number = None
-countdown_duration = 30 * 60
+countdown_duration = 20
 countdowns = {}
 
 # Create and connect to MongoClient instance
@@ -56,6 +56,7 @@ def parser(current_log):
         i.pop('user', None)
         i.pop('timestamp_i', None)
         i.pop('timestamp_o', None)
+        i.pop('last_timestamp', None)
     return current_log
     
 # Allow all requests to be accepted by Flask
