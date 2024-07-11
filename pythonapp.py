@@ -135,6 +135,7 @@ def reply():
     
     if phone_number in countdowns:
         countdowns[phone_number].stop()
+        print("stopped")
     
     countdown_thread = Countdown(phone_number, countdown_duration)
     countdown_thread.start()
@@ -146,6 +147,7 @@ def reply():
         parsed_log = parser(database) 
         current_log = template + parsed_log 
         print(current_log)
+        print(1)
 
     # Pulls known number's chat log from MongoDB
     elif phone_number in known_numbers:
@@ -153,12 +155,14 @@ def reply():
         parsed_log = parser(database) 
         current_log = template + parsed_log 
         previous_number = phone_number
+        print(2)
 
     # Creates new known user and a new chat log
     else:
         current_log = template + [{'role': 'user', 'content': incoming}]
         previous_number = phone_number
         known_numbers.append(phone_number)
+        print(3)
 
     # Calls `gpt` function to generate reply, given the array `current_log`
     reply = gpt(current_log)
