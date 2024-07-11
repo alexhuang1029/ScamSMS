@@ -73,10 +73,8 @@ class Countdown(threading.Thread):
         while self.duration > 0 and not self.stop_event.is_set():
             time.sleep(1)
             self.duration -= 1
-            print(f'{self.duration} left for {self.number}')
         if not self.stop_event.is_set():
             self.cleanup(self.number)
-            print(f'Cleanup and merge completed for user {self.number}')
 
     def stop(self):
         self.stop_event.set()
@@ -103,6 +101,8 @@ class Countdown(threading.Thread):
         # Deleting all unmerged chats
         for doc in unmerged_chats:
             message_database.delete_one({"_id": doc["_id"]})
+
+        print(f'Cleanup and merge completed for user {number}')
             
 
 
