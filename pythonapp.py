@@ -144,8 +144,8 @@ def reply():
             "content": "\n".join(doc["content"] for doc in database)
         }
         print(combined_database)
-        parsed_log = parser(combined_database) 
-        current_log = template + parsed_log 
+        # parsed_log = parser(combined_database) 
+        current_log = template + combined_database 
         print(current_log)
         print(1)
 
