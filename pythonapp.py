@@ -20,7 +20,7 @@ current_log = []
 known_numbers = []
 previous_number = None
 countdown_duration = 20
-countdowns = []
+countdowns = {}
 
 # Create and connect to MongoClient instance
 # Create directory (`chatlogs`) where messages are stored
@@ -107,8 +107,8 @@ class Countdown(threading.Thread):
         for doc in unmerged_chats:
             message_database.delete_one({"_id": doc["_id"]})
 
-        countdowns.remove(number)
-        
+        countdowns.pop(number, None)
+
         print(f'Cleanup and merge completed for user {number}')
             
 
@@ -135,8 +135,6 @@ def reply():
     
     if phone_number in countdowns:
         countdowns[phone_number].stop()
-    else:
-        countdowns.append(phone_number)
     
     countdown_thread = Countdown(phone_number, countdown_duration)
     countdown_thread.start()
