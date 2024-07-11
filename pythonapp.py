@@ -107,7 +107,8 @@ class Countdown(threading.Thread):
         for doc in unmerged_chats:
             message_database.delete_one({"_id": doc["_id"]})
 
-        del countdowns[number]
+        countdowns.remove(number)
+        
         print(f'Cleanup and merge completed for user {number}')
             
 
