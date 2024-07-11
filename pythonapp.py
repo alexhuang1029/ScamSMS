@@ -132,15 +132,7 @@ def reply():
         "role": 'user',
         "content": incoming
     })
-    
-    if phone_number in countdowns:
-        countdowns[phone_number].stop()
-        print("stopped")
-    
-    countdown_thread = Countdown(phone_number, countdown_duration)
-    countdown_thread.start()
-    countdowns[phone_number] = countdown_thread
-
+        
     # Perform check to see if previous number is this number:
     if phone_number == previous_number:
         database = list(message_database.find({"user": phone_number}))
@@ -163,6 +155,17 @@ def reply():
         previous_number = phone_number
         known_numbers.append(phone_number)
         print(3)
+
+
+    if phone_number in countdowns:
+        countdowns[phone_number].stop()
+        print("stopped")
+
+    countdown_thread = Countdown(phone_number, countdown_duration)
+    countdown_thread.start()
+    countdowns[phone_number] = countdown_thread
+
+    
 
     # Calls `gpt` function to generate reply, given the array `current_log`
     reply = gpt(current_log)
